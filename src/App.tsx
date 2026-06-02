@@ -22,18 +22,20 @@ export default function App() {
 
   const speakText = async (text: string, currentLang: Language) => {
     const cleanText = text.replace(/[*#_]/g, '');
+    
     try {
       const res = await fetch('/api/tts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ text: cleanText })
+        body: JSON.stringify({ text: cleanText, lang: currentLang })
       });
       if (!res.ok) throw new Error("TTS API Error");
       const data = await res.json();
       if (data.audio) {
-        const audio = new Audio(`data:audio/wav;base64,${data.audio}`);
+        // google-tts-api returns base64 string, type is mp3
+        const audio = new Audio(`data:audio/mp3;base64,${data.audio}`);
         audio.onended = () => setIsSpeaking(false);
         audio.onerror = () => setIsSpeaking(false);
         setIsSpeaking(true);
@@ -42,7 +44,7 @@ export default function App() {
       }
       throw new Error("No audio payload from server");
     } catch (err) {
-      // Gemini TTS unavailable, falling back to browser synthesis.
+      console.log('API TTS Failed, falling back to browser synthesis', err);
       if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
         setIsSpeaking(false);
         return;
@@ -51,18 +53,21 @@ export default function App() {
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = currentLang === 'fr' ? 'fr-FR' : 'en-US';
       
-      const voices = window.speechSynthesis.getVoices();
-      const preferred = voices.find(v => 
-        v.lang.startsWith(currentLang === 'fr' ? 'fr' : 'en') && 
-        (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('google'))
-      );
-      if (preferred) utterance.voice = preferred;
-      
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-      
-      window.speechSynthesis.speak(utterance);
+      // Quick timeout needed sometimes to ensure cancel completes
+      setTimeout(() => {
+        const voices = window.speechSynthesis.getVoices();
+        const preferred = voices.find(v => 
+          v.lang.startsWith(currentLang === 'fr' ? 'fr' : 'en') && 
+          (v.name.toLowerCase().includes('female') || v.name.toLowerCase().includes('google'))
+        );
+        if (preferred) utterance.voice = preferred;
+        
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        
+        window.speechSynthesis.speak(utterance);
+      }, 50);
     }
   };
 
