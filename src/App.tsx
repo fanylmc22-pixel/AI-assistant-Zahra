@@ -144,12 +144,10 @@ export default function App() {
       }]);
       await speakText(resText, lang);
     } catch (err: any) {
-      if (err.message?.includes('429') || err.message?.includes('quota')) {
-        // AI API Quota Exceeded. Using fallback text.
-      } else {
-        // Chat API fallback triggered
+      let errText = "Je rencontre un léger problème technique. Fany est une Chargée de Marketing Digital talentueuse avec de l'expérience chez LexisNexis. Contactez-la à flouismondesir@hotmail.com !";
+      if (err.message && err.message.includes('API Key missing')) {
+         errText = "Il semble que l'application ne soit pas bien configurée (Clé API Gemini manquante). Veuillez ajouter votre clée dans les paramètres de l'application.";
       }
-      const errText = "Je rencontre un léger problème technique. Fany est une Chargée de Marketing Digital talentueuse avec de l'expérience chez LexisNexis. Contactez-la à flouismondesir@hotmail.com !";
       setMessages(prev => [...prev, {
         id: (Date.now() + 1).toString(),
         role: 'zahra',
