@@ -29,23 +29,40 @@ Compétences:
 - Langues: Français (natif), Anglais (professionnel), Espagnol (notions).
 `.trim();
 
+import fs from 'fs';
+function logFile(msg: string) {
+  try {
+     fs.appendFileSync('.dev-logs.txt', new Date().toISOString() + ': ' + msg + '\n');
+  } catch(e) {}
+}
+
+process.on('uncaughtException', (err) => {
+  logFile('UNCAUGHT EXCEPTION: ' + err.stack);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  logFile('UNHANDLED REJECTION: ' + String(reason));
+});
+
 async function startServer() {
+  logFile('Starting server...');
   const app = express();
   const PORT = 3000;
+
 
   // Needed to parse incoming JSON payload
   app.use(express.json());
 
   // AI Chat Route
   app.post('/api/chat', async (req, res) => {
+    const fallbackText = "Bonjour ! Je suis l'assistante de Fany Louis-Mondésir. Elle est actuellement une Chargée de Marketing Digital & Acquisition avec une belle expérience chez LexisNexis et au MEDEF International. Elle cherche un CDI en marketing digital B2B. N'hésitez pas à la contacter à flouismondesir@hotmail.com !";
     try {
       console.log('Received POST /api/chat req.body:', req.body);
-      const { messages } = req.body;
-      
+      const messages = req.body?.messages || [];
       const apiKey = process.env.GEMINI_API_KEY;
+      
       if (!apiKey) {
         console.error('GEMINI_API_KEY is missing');
-        return res.status(500).json({ error: "Configuration API Key missing. Please set GEMINI_API_KEY." });
+        return res.json({ text: "Clé API manquante. " + fallbackText });
       }
 
       const ai = new GoogleGenAI({ apiKey });
@@ -81,17 +98,12 @@ async function startServer() {
           }
         }
       }
-
       console.log('GenAI response text:', response?.text);
       res.json({ text: response?.text });
     } catch (err: any) {
-      if (err.status === 429 || err?.message?.includes('429') || err?.message?.includes('quota')) {
-        // AI API Quota Exceeded. Using fallback text.
-      } else {
-        console.error("AI API Error:", err.message || err);
-      }
-      // Fallback response with CV information in case of API limit or failure
-      const fallbackText = "Je rencontre actuellement un petit problème technique qui m'empêche d'analyser son profil en profondeur. Cependant, je peux vous dire que Fany Louis-Mondésir est une super Chargée de Marketing Digital & Acquisition avec de l'expérience chez LexisNexis et MEDEF International. Elle maîtrise l'acquisition, le CRM (Pardot, HubSpot) et la création de contenu. N'hésitez pas à la contacter à flouismondesir@hotmail.com pour échanger !";
+      logFile("AI API Error: " + err.stack);
+      console.error("AI API Error:", err);
+      // ALWAYS return 200 with fallback to avoid frontend crash loop or HTML error pages
       res.json({ text: fallbackText });
     }
   });
@@ -119,6 +131,7 @@ async function startServer() {
       
       res.json({ audio: base64Audio, type: 'mp3' });
     } catch (err: any) {
+      logFile("TTS Exception: " + err.stack);
       console.error("TTS Error:", err.message);
       res.status(500).json({ error: err.message });
     }
@@ -141,6 +154,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
+    logFile(`Server running on http://localhost:${PORT}`);
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }
