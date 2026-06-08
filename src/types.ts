@@ -4,5 +4,4 @@ export interface Message {
   text: string;
 }
 
-export type TabState = 'chat' | 'voice' | 'history' | 'settings';
 export type Language = 'en' | 'fr';

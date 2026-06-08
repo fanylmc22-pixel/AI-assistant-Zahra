@@ -1,25 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Message, TabState, Language } from './types';
-import { VoiceTab, ChatTab, HistoryTab, SettingsTab } from './components';
-import { MessageCircle, Mic, RotateCcw, Settings, Type } from 'lucide-react';
+import { Message, Language } from './types';
+import { VoiceTab } from './components';
+import { Type } from 'lucide-react';
 
 const AVATAR_URL = 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=250&h=250';
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<TabState>('voice');
-  const currentTabRef = useRef<TabState>('voice');
-  
-  useEffect(() => {
-    currentTabRef.current = currentTab;
-    if (currentTab !== 'voice') {
-      autoContinueRef.current = false;
-      if (recognitionRef.current && isListening) {
-         recognitionRef.current.stop();
-         setIsListening(false);
-      }
-    }
-  }, [currentTab]);
-
   const [messages, setMessages] = useState<Message[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [lang, setLang] = useState<Language>('fr');
@@ -55,7 +41,7 @@ export default function App() {
     const cleanText = text.replace(/[*#_]/g, '');
     const triggerNext = () => {
       setIsSpeaking(false);
-      if (currentTabRef.current === 'voice' && autoContinueRef.current) {
+      if (autoContinueRef.current) {
         startListening();
       }
     };
@@ -122,7 +108,7 @@ export default function App() {
       return;
     }
 
-    autoContinueRef.current = currentTabRef.current === 'voice';
+    autoContinueRef.current = true;
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -221,13 +207,6 @@ export default function App() {
     }
   };
 
-  const navItems = [
-    { id: 'chat', icon: MessageCircle, label_fr: 'Chat', label_en: 'Chat' },
-    { id: 'voice', icon: Mic, label_fr: 'Voix', label_en: 'Voice' },
-    { id: 'history', icon: RotateCcw, label_fr: 'Historique', label_en: 'History' },
-    { id: 'settings', icon: Settings, label_fr: 'Réglages', label_en: 'Settings' }
-  ] as const;
-
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-[#e9e4e6] sm:p-6 font-sans text-[#4f494b] selection:bg-accent/20">
       
@@ -253,64 +232,16 @@ export default function App() {
 
         {/* Dynamic App Body */}
         <main className="flex-1 flex flex-col relative overflow-y-auto no-scrollbar z-10 w-full h-full bg-transparent">
-          {currentTab === 'voice' && (
-            <VoiceTab 
-              onAskQuestion={sendMessage} 
-              isGenerating={isGenerating} 
-              lang={lang} 
-              setLang={setLang}
-              onStartListening={startListening}
-              isListening={isListening}
-              isSpeaking={isSpeaking}
-            />
-          )}
-          
-          {currentTab === 'chat' && (
-            <ChatTab 
-              messages={messages} 
-              sendMessage={sendMessage} 
-              isGenerating={isGenerating} 
-              onClear={() => setMessages([])} 
-              lang={lang}
-              onStartListening={startListening}
-              isListening={isListening}
-              onSpeak={(text) => speakText(text, lang)}
-              isSpeaking={isSpeaking}
-            />
-          )}
-
-          {currentTab === 'history' && (
-             <HistoryTab messages={messages} lang={lang} />
-          )}
-
-          {currentTab === 'settings' && (
-             <SettingsTab 
-                lang={lang} 
-                setLang={setLang} 
-                onClear={() => setMessages([])} 
-             />
-          )}
+          <VoiceTab 
+            onAskQuestion={sendMessage} 
+            isGenerating={isGenerating} 
+            lang={lang} 
+            setLang={setLang}
+            onStartListening={startListening}
+            isListening={isListening}
+            isSpeaking={isSpeaking}
+          />
         </main>
-
-        {/* Bottom Navigation */}
-        <nav className="flex-none grid grid-cols-4 px-2 pt-3 pb-safe bg-[#fdf6f3]/95 border-t border-[#785a64]/10 backdrop-blur-xl z-20 pb-[max(env(safe-area-inset-bottom),14px)]">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isOn = currentTab === item.id;
-            const label = lang === 'en' ? item.label_en : item.label_fr;
-            return (
-              <button
-                key={item.id}
-                onClick={() => setCurrentTab(item.id as TabState)}
-                className={`flex flex-col items-center gap-1.5 py-2 transition-colors ${isOn ? 'text-[#c01a62]' : 'text-[#a4969a]'}`}
-              >
-                <Icon size={24} strokeWidth={isOn ? 2.5 : 2} className={isOn ? 'drop-shadow-sm scale-110 transition-transform' : 'transition-transform'} />
-                <span className={`text-[12px] tracking-tight ${isOn ? 'font-bold' : 'font-semibold'}`}>{label}</span>
-              </button>
-            )
-          })}
-        </nav>
-
       </div>
     </div>
   );
