@@ -65,7 +65,7 @@ async function startServer() {
       while (retries >= 0) {
         try {
           response = await ai.models.generateContent({
-            model: 'gemini-3.1-flash-lite',
+            model: 'gemini-2.5-flash',
             contents: formattedContents,
             config: {
               systemInstruction: systemInstruction,
