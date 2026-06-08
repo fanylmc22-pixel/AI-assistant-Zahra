@@ -1,6 +1,0 @@
-{
-  "name": "CV Assistant Zahra",
-  "description": "Assistant virtuelle",
-  "requestFramePermissions": ["microphone"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
