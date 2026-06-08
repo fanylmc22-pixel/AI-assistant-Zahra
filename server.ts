@@ -5,28 +5,12 @@ import { GoogleGenAI, Modality } from '@google/genai';
 
 const FANY_CV = `
 Fany Louis-Mondésir
-Chargée de Marketing Digital & Acquisition
-France
-flouismondesir@hotmail.com | www.linkedin.com/in/fany-lm
-
-Résumé:
-Chargée de Marketing Digital & Acquisition chez LexisNexis (Europe & Afrique francophone), je pilote des campagnes multicanales, de l'automation Pardot à la création de contenu. Actuellement en M2 à l'ESCE, je recherche un CDI ou CDD en marketing digital B2B.
-
-Expérience:
-- LexisNexis (février 2025 - Présent): Chargée de Marketing Digital et Acquisition (B2B, campagnes multicanales, SEO, SEA, Pardot, web, event).
-- Mouvement des Entreprises de France International (février 2023 - juillet 2023): Appui opérationnel - Assistante CRM (onboarding, événements, segmentation Pardot).
-- McDonald's (octobre 2022 - décembre 2022): Équipier polyvalent.
-- Glam&Cosy (juin 2022 - juillet 2022): Assistant en Marketing Digital et Communication (réseaux sociaux, Shopify, Canva, création de contenu).
-
-Formation:
-- ESCE International Business School : Master 1 (M1) International Consumer Marketing (juil. 2024 - août 2026).
-- ESCE International Business School : Bachelor Commerce international (fév. 2021 - juin 2023).
-
-Compétences:
-- Acquisition digitale: SEO, SEA, Emailing, Display.
-- CRM & Automation: Pardot, HubSpot.
-- Création contenu: LinkedIn, blog, Canva.
-- Langues: Français (natif), Anglais (professionnel), Espagnol (notions).
+flouismondesir@hotmail.com
+Chargée de Marketing Digital & Acquisition chez LexisNexis (Marketing B2B, campagnes multicanales, Pardot, web, event).
+Recherche un CDI en marketing digital B2B.
+Exp: LexisNexis (fév 2025-présent), MEDEF International (assistante CRM, 2023).
+Formation: Master 1 ESCE (2024-2026).
+Compétences: SEO, SEA, Emailing, Pardot, HubSpot, Canva.
 `.trim();
 
 import fs from 'fs';
@@ -54,7 +38,7 @@ async function startServer() {
 
   // AI Chat Route
   app.post('/api/chat', async (req, res) => {
-    const fallbackText = "Bonjour ! Je suis l'assistante de Fany Louis-Mondésir. Elle est actuellement une Chargée de Marketing Digital & Acquisition avec une belle expérience chez LexisNexis et au MEDEF International. Elle cherche un CDI en marketing digital B2B. N'hésitez pas à la contacter à flouismondesir@hotmail.com !";
+    const fallbackText = "Ceci est le mode sans l'IA : Fany est Chargée de Marketing Digital à la recherche d'un CDI. Contactez-la à flouismondesir@hotmail.com !";
     try {
       console.log('Received POST /api/chat req.body:', req.body);
       const messages = req.body?.messages || [];
@@ -73,7 +57,7 @@ async function startServer() {
         parts: [{ text: m.text }]
       }));
 
-      const systemInstruction = "Tu es Zahra, une assistante virtuelle professionnelle et chaleureuse. Ton rôle est de représenter Fany Louis-Mondésir et de répondre aux questions sur son CV aux recruteurs. Tu es enthousiaste, précise, et tu fais ressortir sa valeur ajoutée. Réponds de FAÇON TRÈS CONCISE (1 à 2 phrases courtes maximum) et conversationnelle. NE METS JAMAIS D'ASTÉRISQUES ou de texte en gras ; ton texte sera lu à l'oral. Si l'utilisateur te salue sans question précise, mentionne de suite un point fort de Fany (ex: son poste chez LexisNexis ou sa recherche de CDI) pour engager la conversation. L'utilisateur utilise la reconnaissance vocale : sois très indulgente avec les erreurs de transcription, les mots mal orthographiés (comme 'fanny' au lieu de Fany) ou les phrases approximatives, et essaie de toujours deviner son intention pour lui répondre utilement. \n\nVoici le CV complet de Fany :\n\n" + FANY_CV;
+      const systemInstruction = "Tu es Zahra, une assistante qui représente Fany Louis-Mondésir. Réponds très brièvement (1 phrase). Fany: " + FANY_CV;
 
       console.log('Calling GenAI model...');
       let response;
@@ -81,10 +65,11 @@ async function startServer() {
       while (retries >= 0) {
         try {
           response = await ai.models.generateContent({
-            model: 'gemini-flash-latest',
+            model: 'gemini-3.1-flash-lite',
             contents: formattedContents,
             config: {
-              systemInstruction: systemInstruction
+              systemInstruction: systemInstruction,
+              maxOutputTokens: 60
             }
           });
           break; // success
